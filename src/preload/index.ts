@@ -1,8 +1,18 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { SELECT_PROJECT_CHANNEL, type RpgmvApi } from '../shared/contracts'
+import {
+  APPLY_PROJECT_CHANGE_CHANNEL,
+  PREVIEW_PROJECT_CHANGE_CHANNEL,
+  SELECT_PROJECT_CHANNEL,
+  UNDO_PROJECT_CHANGE_CHANNEL,
+  type RpgmvApi
+} from '../shared/contracts'
 
 const api: RpgmvApi = {
-  selectProject: () => ipcRenderer.invoke(SELECT_PROJECT_CHANNEL)
+  selectProject: () => ipcRenderer.invoke(SELECT_PROJECT_CHANNEL),
+  previewProjectChange: (operation) =>
+    ipcRenderer.invoke(PREVIEW_PROJECT_CHANGE_CHANNEL, operation),
+  applyProjectChange: (previewId) => ipcRenderer.invoke(APPLY_PROJECT_CHANGE_CHANNEL, previewId),
+  undoProjectChange: () => ipcRenderer.invoke(UNDO_PROJECT_CHANGE_CHANNEL)
 }
 
 contextBridge.exposeInMainWorld('rpgmv', api)

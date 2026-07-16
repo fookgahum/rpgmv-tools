@@ -3,6 +3,7 @@ import type {
   DatabaseEntry,
   DatabaseKind,
   NamedEntry,
+  ProjectChangeOperation,
   ProjectSnapshot
 } from '../../../shared/contracts'
 import { ReferencePanel } from '../components/ReferencePanel'
@@ -12,6 +13,7 @@ interface NamedDataViewProps {
   project: ProjectSnapshot
   kind: 'switch' | 'variable'
   text: MessageSet
+  onPreview: (operation: ProjectChangeOperation) => Promise<void>
 }
 
 function matches(entry: NamedEntry, query: string): boolean {
@@ -23,7 +25,12 @@ function matches(entry: NamedEntry, query: string): boolean {
   )
 }
 
-export function NamedDataView({ project, kind, text }: NamedDataViewProps): React.JSX.Element {
+export function NamedDataView({
+  project,
+  kind,
+  text,
+  onPreview
+}: NamedDataViewProps): React.JSX.Element {
   const entries = kind === 'switch' ? project.switches : project.variables
   const [selectedId, setSelectedId] = useState(entries[0]?.id ?? 0)
   const [search, setSearch] = useState('')
@@ -83,6 +90,13 @@ export function NamedDataView({ project, kind, text }: NamedDataViewProps): Reac
                 <strong>{selectedEntry.name || text.unnamed}</strong>
               </div>
             </section>
+            <NamedEntryEditor
+              key={`${kind}-${selectedEntry.id}-${selectedEntry.name}`}
+              entry={selectedEntry}
+              kind={kind}
+              text={text}
+              onPreview={onPreview}
+            />
             <ReferencePanel
               project={project}
               target={kind}
@@ -93,6 +107,46 @@ export function NamedDataView({ project, kind, text }: NamedDataViewProps): Reac
         )}
       </main>
     </div>
+  )
+}
+
+interface NamedEntryEditorProps {
+  entry: NamedEntry
+  kind: 'switch' | 'variable'
+  text: MessageSet
+  onPreview: (operation: ProjectChangeOperation) => Promise<void>
+}
+
+function NamedEntryEditor({
+  entry,
+  kind,
+  text,
+  onPreview
+}: NamedEntryEditorProps): React.JSX.Element {
+  const [name, setName] = useState(entry.name)
+
+  return (
+    <section className="detail-section inline-editor">
+      <label>
+        <span>{text.editor.name}</span>
+        <input value={name} maxLength={200} onChange={(event) => setName(event.target.value)} />
+      </label>
+      <button
+        type="button"
+        className="primary-button compact-button"
+        disabled={name === entry.name}
+        onClick={() =>
+          void onPreview({
+            kind: 'renameNamedEntry',
+            target: kind,
+            id: entry.id,
+            name
+          })
+        }
+      >
+        {text.editor.preview}
+      </button>
+    </section>
   )
 }
 

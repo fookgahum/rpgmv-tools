@@ -6,7 +6,7 @@ export interface MessageSet {
   language: string
   changeProject: string
   loading: string
-  readOnly: string
+  safeWrite: string
   search: string
   unnamed: string
   noData: string
@@ -35,6 +35,10 @@ export interface MessageSet {
     invalidJson: string
     unreadableProject: string
     unexpected: string
+    noProject: string
+    invalidChange: string
+    projectChanged: string
+    writeFailed: string
   }
   overview: {
     title: string
@@ -81,6 +85,9 @@ export interface MessageSet {
     conditionSelfSwitch: string
     conditionItem: string
     conditionActor: string
+    newEvent: string
+    editEvent: string
+    addPage: string
   }
   commonEvents: {
     title: string
@@ -88,6 +95,8 @@ export interface MessageSet {
     trigger: string
     switch: string
     triggers: string[]
+    newEvent: string
+    editEvent: string
   }
   data: {
     switchesTitle: string
@@ -111,6 +120,73 @@ export interface MessageSet {
     page: string
     command: string
   }
+  editor: {
+    cancel: string
+    preview: string
+    undo: string
+    applying: string
+    name: string
+    note: string
+    x: string
+    y: string
+    previewTitle: string
+    previewDescription: string
+    before: string
+    after: string
+    confirmWrite: string
+    changeApplied: string
+    changeUndone: string
+    backup: string
+    commandType: string
+    insertAt: string
+    indent: string
+    addCommand: string
+    delete: string
+    endPosition: string
+    beforeCommand: string
+    content: string
+    target: string
+    state: string
+    on: string
+    off: string
+    operation: string
+    set: string
+    add: string
+    subtract: string
+    amount: string
+    value: string
+    frames: string
+    destinationX: string
+    destinationY: string
+    comparison: string
+    equal: string
+    greaterEqual: string
+    lessEqual: string
+    greater: string
+    less: string
+    notEqual: string
+    switchOne: string
+    switchTwo: string
+    minimum: string
+    selfSwitch: string
+    actorId: string
+    types: {
+      text: string
+      switch: string
+      variable: string
+      selfSwitch: string
+      gold: string
+      item: string
+      weapon: string
+      armor: string
+      commonEvent: string
+      wait: string
+      transfer: string
+      conditionSwitch: string
+      conditionVariable: string
+      conditionItem: string
+    }
+  }
 }
 
 export const messages: Record<Locale, MessageSet> = {
@@ -118,7 +194,7 @@ export const messages: Record<Locale, MessageSet> = {
     language: '语言',
     changeProject: '切换工程',
     loading: '正在扫描工程…',
-    readOnly: '只读扫描',
+    safeWrite: '预览后写入',
     search: '按 ID 或名称搜索',
     unnamed: '未命名',
     noData: '没有可显示的数据',
@@ -127,12 +203,12 @@ export const messages: Record<Locale, MessageSet> = {
     noReferences: '当前工程中没有找到引用',
     projectPath: '工程路径',
     welcome: {
-      eyebrow: 'RPG Maker MV 工程分析器',
-      title: '从读取现有工程开始',
+      eyebrow: 'RPG Maker MV 事件助手',
+      title: '打开并安全编辑现有工程',
       description:
-        '选择 Game.rpgproject 后，工具会读取地图事件、公共事件、开关、变量和物品数据库。第一版不会修改任何工程文件。',
+        '选择 Game.rpgproject 后，可以浏览和编辑地图事件、公共事件、开关与变量。所有修改必须先查看差异，确认后才会写入。',
       select: '选择 RPGMV 工程',
-      safety: '安全模式：本版本只读取和分析工程数据。'
+      safety: '安全写入：外部改动检测、自动备份、原子替换和单步撤销。'
     },
     nav: {
       overview: '工程总览',
@@ -144,10 +220,14 @@ export const messages: Record<Locale, MessageSet> = {
     },
     errors: {
       invalidProjectFile: '请选择名为 Game.rpgproject 的 RPG Maker MV 工程文件。',
-      missingProjectData: '工程缺少 data/System.json 或 data/MapInfos.json。',
+      missingProjectData: '工程缺少必要的 RPG Maker MV 数据文件。',
       invalidJson: '工程中存在无法解析的 JSON 文件。',
       unreadableProject: '无法读取该工程，请检查文件权限和工程完整性。',
-      unexpected: '扫描工程时发生了未知错误。'
+      unexpected: '处理工程时发生了未知错误。',
+      noProject: '当前没有打开的工程。',
+      invalidChange: '修改内容无效，请检查输入的数据。',
+      projectChanged: '预览后工程文件发生了变化，已阻止写入。请重新扫描后再修改。',
+      writeFailed: '写入失败，原工程文件没有被替换。'
     },
     overview: {
       title: '工程总览',
@@ -193,14 +273,19 @@ export const messages: Record<Locale, MessageSet> = {
       conditionVariable: '变量',
       conditionSelfSwitch: '独立开关',
       conditionItem: '持有物品',
-      conditionActor: '队伍角色'
+      conditionActor: '队伍角色',
+      newEvent: '新建事件',
+      editEvent: '编辑事件页',
+      addPage: '新增事件页'
     },
     commonEvents: {
       title: '公共事件',
       empty: '工程中没有公共事件',
       trigger: '触发方式',
       switch: '触发开关',
-      triggers: ['无', '自动执行', '并行处理']
+      triggers: ['无', '自动执行', '并行处理'],
+      newEvent: '新建公共事件',
+      editEvent: '编辑公共事件'
     },
     data: {
       switchesTitle: '开关',
@@ -223,13 +308,80 @@ export const messages: Record<Locale, MessageSet> = {
       commonEvent: '公共事件',
       page: '事件页',
       command: '指令'
+    },
+    editor: {
+      cancel: '取消',
+      preview: '预览修改',
+      undo: '撤销上次写入',
+      applying: '正在写入…',
+      name: '名称',
+      note: '备注',
+      x: 'X 坐标',
+      y: 'Y 坐标',
+      previewTitle: '确认工程修改',
+      previewDescription: '写入前请检查目标文件及前后差异。确认后会自动创建备份。',
+      before: '修改前',
+      after: '修改后',
+      confirmWrite: '确认并写入',
+      changeApplied: '修改已写入工程。',
+      changeUndone: '上一次写入已经撤销。',
+      backup: '备份位置',
+      commandType: '指令类型',
+      insertAt: '插入位置',
+      indent: '缩进层级',
+      addCommand: '添加指令',
+      delete: '删除',
+      endPosition: '列表末尾',
+      beforeCommand: '指令 {id} 之前',
+      content: '内容',
+      target: '目标',
+      state: '状态',
+      on: '开启',
+      off: '关闭',
+      operation: '操作',
+      set: '赋值',
+      add: '增加',
+      subtract: '减少',
+      amount: '数量',
+      value: '数值',
+      frames: '帧数',
+      destinationX: '目标 X',
+      destinationY: '目标 Y',
+      comparison: '比较方式',
+      equal: '等于',
+      greaterEqual: '大于等于',
+      lessEqual: '小于等于',
+      greater: '大于',
+      less: '小于',
+      notEqual: '不等于',
+      switchOne: '条件开关 1',
+      switchTwo: '条件开关 2',
+      minimum: '最小值',
+      selfSwitch: '独立开关',
+      actorId: '角色 ID',
+      types: {
+        text: '显示文章',
+        switch: '控制开关',
+        variable: '控制变量',
+        selfSwitch: '控制独立开关',
+        gold: '增减金钱',
+        item: '增减物品',
+        weapon: '增减武器',
+        armor: '增减防具',
+        commonEvent: '调用公共事件',
+        wait: '等待',
+        transfer: '场所移动',
+        conditionSwitch: '开关条件分支',
+        conditionVariable: '变量条件分支',
+        conditionItem: '物品条件分支'
+      }
     }
   },
   en: {
     language: 'Language',
     changeProject: 'Change project',
     loading: 'Scanning project…',
-    readOnly: 'Read-only scan',
+    safeWrite: 'Preview before write',
     search: 'Search by ID or name',
     unnamed: 'Unnamed',
     noData: 'No data to display',
@@ -238,12 +390,13 @@ export const messages: Record<Locale, MessageSet> = {
     noReferences: 'No references found in this project',
     projectPath: 'Project path',
     welcome: {
-      eyebrow: 'RPG Maker MV project analyzer',
-      title: 'Start with an existing project',
+      eyebrow: 'RPG Maker MV event assistant',
+      title: 'Open and safely edit a project',
       description:
-        'Select Game.rpgproject to scan map events, common events, switches, variables, items, and equipment. Version one never changes project files.',
+        'Select Game.rpgproject to browse and edit map events, common events, switches, and variables. Every change requires a diff preview before it can be written.',
       select: 'Select RPGMV project',
-      safety: 'Safe mode: this version only reads and analyzes project data.'
+      safety:
+        'Safe writes: external-change detection, backups, atomic replacement, and one-step undo.'
     },
     nav: {
       overview: 'Overview',
@@ -255,10 +408,15 @@ export const messages: Record<Locale, MessageSet> = {
     },
     errors: {
       invalidProjectFile: 'Select the Game.rpgproject file from an RPG Maker MV project.',
-      missingProjectData: 'The project is missing data/System.json or data/MapInfos.json.',
+      missingProjectData: 'The project is missing required RPG Maker MV data files.',
       invalidJson: 'A project JSON file could not be parsed.',
       unreadableProject: 'The project could not be read. Check its permissions and integrity.',
-      unexpected: 'An unexpected error occurred while scanning the project.'
+      unexpected: 'An unexpected error occurred while processing the project.',
+      noProject: 'No project is currently open.',
+      invalidChange: 'The change is invalid. Check the entered data.',
+      projectChanged:
+        'The project changed after preview, so the write was blocked. Rescan and try again.',
+      writeFailed: 'The write failed and the original project file was not replaced.'
     },
     overview: {
       title: 'Project overview',
@@ -304,14 +462,19 @@ export const messages: Record<Locale, MessageSet> = {
       conditionVariable: 'Variable',
       conditionSelfSwitch: 'Self switch',
       conditionItem: 'Has item',
-      conditionActor: 'Actor in party'
+      conditionActor: 'Actor in party',
+      newEvent: 'New event',
+      editEvent: 'Edit event page',
+      addPage: 'Add event page'
     },
     commonEvents: {
       title: 'Common events',
       empty: 'This project has no common events',
       trigger: 'Trigger',
       switch: 'Trigger switch',
-      triggers: ['None', 'Autorun', 'Parallel']
+      triggers: ['None', 'Autorun', 'Parallel'],
+      newEvent: 'New common event',
+      editEvent: 'Edit common event'
     },
     data: {
       switchesTitle: 'Switches',
@@ -334,6 +497,73 @@ export const messages: Record<Locale, MessageSet> = {
       commonEvent: 'Common event',
       page: 'Page',
       command: 'Command'
+    },
+    editor: {
+      cancel: 'Cancel',
+      preview: 'Preview change',
+      undo: 'Undo last write',
+      applying: 'Writing…',
+      name: 'Name',
+      note: 'Note',
+      x: 'X coordinate',
+      y: 'Y coordinate',
+      previewTitle: 'Confirm project change',
+      previewDescription: 'Review the target file and diff. A backup is created before writing.',
+      before: 'Before',
+      after: 'After',
+      confirmWrite: 'Confirm and write',
+      changeApplied: 'The change was written to the project.',
+      changeUndone: 'The last write was undone.',
+      backup: 'Backup',
+      commandType: 'Command type',
+      insertAt: 'Insert position',
+      indent: 'Indent level',
+      addCommand: 'Add command',
+      delete: 'Delete',
+      endPosition: 'End of list',
+      beforeCommand: 'Before command {id}',
+      content: 'Content',
+      target: 'Target',
+      state: 'State',
+      on: 'ON',
+      off: 'OFF',
+      operation: 'Operation',
+      set: 'Set',
+      add: 'Add',
+      subtract: 'Subtract',
+      amount: 'Amount',
+      value: 'Value',
+      frames: 'Frames',
+      destinationX: 'Destination X',
+      destinationY: 'Destination Y',
+      comparison: 'Comparison',
+      equal: 'Equals',
+      greaterEqual: 'At least',
+      lessEqual: 'At most',
+      greater: 'Greater than',
+      less: 'Less than',
+      notEqual: 'Not equal',
+      switchOne: 'Condition switch 1',
+      switchTwo: 'Condition switch 2',
+      minimum: 'Minimum',
+      selfSwitch: 'Self switch',
+      actorId: 'Actor ID',
+      types: {
+        text: 'Show text',
+        switch: 'Control switch',
+        variable: 'Control variable',
+        selfSwitch: 'Control self switch',
+        gold: 'Change gold',
+        item: 'Change items',
+        weapon: 'Change weapons',
+        armor: 'Change armors',
+        commonEvent: 'Call common event',
+        wait: 'Wait',
+        transfer: 'Transfer player',
+        conditionSwitch: 'Switch condition',
+        conditionVariable: 'Variable condition',
+        conditionItem: 'Item condition'
+      }
     }
   }
 }

@@ -1,7 +1,17 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
-import { SELECT_PROJECT_CHANNEL, type ProjectSelectionResult } from '../shared/contracts'
-import { ProjectReadError, readProject } from './project-reader'
+import {
+  APPLY_PROJECT_CHANGE_CHANNEL,
+  PREVIEW_PROJECT_CHANGE_CHANNEL,
+  SELECT_PROJECT_CHANNEL,
+  UNDO_PROJECT_CHANGE_CHANNEL,
+  type ProjectChangeOperation,
+  type ProjectSelectionResult
+} from '../shared/contracts'
+import { ProjectReadError } from './project-reader'
+import { ProjectSession } from './project-session'
+
+const projectSession = new ProjectSession()
 
 async function selectProject(): Promise<ProjectSelectionResult> {
   const result = await dialog.showOpenDialog({
@@ -14,7 +24,7 @@ async function selectProject(): Promise<ProjectSelectionResult> {
   if (result.canceled || !result.filePaths[0]) return { status: 'cancelled' }
 
   try {
-    return { status: 'loaded', project: await readProject(result.filePaths[0]) }
+    return { status: 'loaded', project: await projectSession.open(result.filePaths[0]) }
   } catch (error) {
     if (error instanceof ProjectReadError) {
       return { status: 'error', code: error.code, detail: error.message }
@@ -56,6 +66,13 @@ function createWindow(): void {
 app.whenReady().then(() => {
   app.setAppUserModelId('com.rpgmvtools.copilot')
   ipcMain.handle(SELECT_PROJECT_CHANNEL, selectProject)
+  ipcMain.handle(PREVIEW_PROJECT_CHANGE_CHANNEL, (_event, operation: ProjectChangeOperation) =>
+    projectSession.preview(operation)
+  )
+  ipcMain.handle(APPLY_PROJECT_CHANGE_CHANNEL, (_event, previewId: string) =>
+    projectSession.apply(previewId)
+  )
+  ipcMain.handle(UNDO_PROJECT_CHANGE_CHANNEL, () => projectSession.undo())
   createWindow()
 })
 

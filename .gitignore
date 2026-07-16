@@ -7,4 +7,5 @@ out
 .electron-cache
 .electron-builder-cache
 .tmp-install
+.tmp-test-*
 *.log*

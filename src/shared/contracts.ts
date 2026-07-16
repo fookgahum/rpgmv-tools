@@ -1,4 +1,7 @@
 export const SELECT_PROJECT_CHANNEL = 'project:select'
+export const PREVIEW_PROJECT_CHANGE_CHANNEL = 'project:preview-change'
+export const APPLY_PROJECT_CHANGE_CHANNEL = 'project:apply-change'
+export const UNDO_PROJECT_CHANGE_CHANNEL = 'project:undo-change'
 
 export interface EventCommand {
   code: number
@@ -100,6 +103,66 @@ export interface ProjectSnapshot {
   warnings: ProjectWarning[]
 }
 
+export interface CommonEventDraft {
+  id?: number
+  name: string
+  trigger: number
+  switchId: number
+  commands: EventCommand[]
+}
+
+export interface MapEventDraft {
+  mapId: number
+  id?: number
+  name: string
+  note: string
+  x: number
+  y: number
+  page: {
+    id?: number
+    conditions: EventPageConditions
+    trigger: number
+    priority: number
+    imageName: string
+    moveType: number
+    commands: EventCommand[]
+  }
+}
+
+export type ProjectChangeOperation =
+  | {
+      kind: 'renameNamedEntry'
+      target: 'switch' | 'variable'
+      id: number
+      name: string
+    }
+  | { kind: 'saveCommonEvent'; event: CommonEventDraft }
+  | { kind: 'saveMapEvent'; event: MapEventDraft }
+
+export type ProjectMutationErrorCode =
+  'noProject' | 'invalidChange' | 'projectChanged' | 'writeFailed'
+
+export interface ChangePreview {
+  id: string
+  fileName: string
+  summary: string
+  before: string
+  after: string
+}
+
+export type PreviewChangeResult =
+  | { status: 'ready'; preview: ChangePreview }
+  | { status: 'error'; code: ProjectMutationErrorCode; detail?: string }
+
+export type ApplyChangeResult =
+  | { status: 'applied'; project: ProjectSnapshot; backupPath: string }
+  | { status: 'error'; code: ProjectMutationErrorCode; detail?: string }
+
+export type UndoChangeResult =
+  | { status: 'undone'; project: ProjectSnapshot }
+  | { status: 'empty' }
+  | { status: 'error'; code: ProjectMutationErrorCode; detail?: string }
+
 export type ProjectSelectionResult =
   | { status: 'loaded'; project: ProjectSnapshot }
   | { status: 'cancelled' }
@@ -111,4 +174,7 @@ export type ProjectSelectionResult =
 
 export interface RpgmvApi {
   selectProject: () => Promise<ProjectSelectionResult>
+  previewProjectChange: (operation: ProjectChangeOperation) => Promise<PreviewChangeResult>
+  applyProjectChange: (previewId: string) => Promise<ApplyChangeResult>
+  undoProjectChange: () => Promise<UndoChangeResult>
 }

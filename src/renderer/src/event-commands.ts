@@ -180,6 +180,15 @@ function rawDetail(parameters: unknown[]): string {
     .join(', ')
 }
 
+function operand(
+  project: ProjectSnapshot,
+  operandType: unknown,
+  value: unknown,
+  locale: Locale
+): string {
+  return operandType === 1 ? entryName(project, 'variable', value, locale) : String(value ?? 0)
+}
+
 export function formatEventCommand(
   command: EventCommand,
   project: ProjectSnapshot,
@@ -213,6 +222,27 @@ export function formatEventCommand(
     case 655:
       detail = String(parameters[0] ?? '')
       break
+    case 111: {
+      const comparisons = ['=', '≥', '≤', '>', '<', '≠']
+      if (parameters[0] === 0) {
+        detail = `${entryName(project, 'switch', parameters[1], locale)} = ${parameters[2] === 0 ? 'ON' : 'OFF'}`
+      } else if (parameters[0] === 1) {
+        detail = `${entryName(project, 'variable', parameters[1], locale)} ${comparisons[Number(parameters[4])] ?? '?'} ${operand(project, parameters[2], parameters[3], locale)}`
+      } else if (parameters[0] === 7) {
+        const gold = locale === 'zh-CN' ? '金钱' : 'Gold'
+        const operators = ['≥', '≤', '<']
+        detail = `${gold} ${operators[Number(parameters[2])] ?? '?'} ${parameters[1] ?? 0}`
+      } else if (parameters[0] === 8) {
+        detail = entryName(project, 'item', parameters[1], locale)
+      } else if (parameters[0] === 9) {
+        detail = entryName(project, 'weapon', parameters[1], locale)
+      } else if (parameters[0] === 10) {
+        detail = entryName(project, 'armor', parameters[1], locale)
+      } else {
+        detail = rawDetail(parameters)
+      }
+      break
+    }
     case 117:
       detail = entryName(project, 'commonEvent', parameters[0], locale)
       break
@@ -231,7 +261,8 @@ export function formatEventCommand(
         parameters[0] === parameters[1]
           ? ''
           : ` – ${entryName(project, 'variable', parameters[1], locale)}`
-      detail = `${first}${last}`
+      const operators = ['=', '+=', '-=', '*=', '/=', '%=']
+      detail = `${first}${last} ${operators[Number(parameters[2])] ?? '?'} ${operand(project, parameters[3], parameters[4], locale)}`
       break
     }
     case 123:

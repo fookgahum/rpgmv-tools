@@ -40,4 +40,14 @@ describe('event command formatting', () => {
 
     expect(result).toEqual({ name: 'Unknown command 999', detail: 'custom, 7' })
   })
+
+  it('formats variable operations and conditional branches', () => {
+    expect(
+      formatEventCommand({ code: 122, indent: 0, parameters: [1, 1, 1, 0, 3, 0] }, project, 'en')
+        .detail
+    ).toBe('#0001 Quest Stage += 3')
+    expect(
+      formatEventCommand({ code: 111, indent: 0, parameters: [0, 2, 0] }, project, 'zh-CN').detail
+    ).toBe('#0002 Chest Open = ON')
+  })
 })
