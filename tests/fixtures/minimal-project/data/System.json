@@ -1,0 +1,6 @@
+{
+  "gameTitle": "Fixture Quest",
+  "switches": ["", "Quest Active", "Chest Open"],
+  "variables": ["", "Quest Stage", "Reward Amount"],
+  "versionId": 42
+}

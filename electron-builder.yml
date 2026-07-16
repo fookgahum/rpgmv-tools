@@ -5,6 +5,9 @@ directories:
 files:
   - '!**/.vscode/*'
   - '!src/*'
+  - '!tests/**'
+  - '!package-lock.json'
+  - '!{.npm-cache,.electron-cache,.electron-builder-cache,.tmp-install}/**'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'

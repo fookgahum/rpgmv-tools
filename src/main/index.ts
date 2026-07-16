@@ -1,5 +1,32 @@
 import { join } from 'node:path'
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { SELECT_PROJECT_CHANNEL, type ProjectSelectionResult } from '../shared/contracts'
+import { ProjectReadError, readProject } from './project-reader'
+
+async function selectProject(): Promise<ProjectSelectionResult> {
+  const result = await dialog.showOpenDialog({
+    title: '选择 RPG Maker MV 工程 / Select RPG Maker MV Project',
+    buttonLabel: '打开工程 / Open Project',
+    properties: ['openFile'],
+    filters: [{ name: 'RPG Maker MV Project', extensions: ['rpgproject'] }]
+  })
+
+  if (result.canceled || !result.filePaths[0]) return { status: 'cancelled' }
+
+  try {
+    return { status: 'loaded', project: await readProject(result.filePaths[0]) }
+  } catch (error) {
+    if (error instanceof ProjectReadError) {
+      return { status: 'error', code: error.code, detail: error.message }
+    }
+
+    return {
+      status: 'error',
+      code: 'unreadableProject',
+      detail: error instanceof Error ? error.message : undefined
+    }
+  }
+}
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -10,6 +37,7 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
@@ -27,6 +55,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   app.setAppUserModelId('com.rpgmvtools.copilot')
+  ipcMain.handle(SELECT_PROJECT_CHANNEL, selectProject)
   createWindow()
 })
 
