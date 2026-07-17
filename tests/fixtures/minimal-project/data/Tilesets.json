@@ -1,0 +1,11 @@
+[
+  null,
+  {
+    "id": 1,
+    "flags": [],
+    "mode": 0,
+    "name": "Fixture Outdoors",
+    "note": "",
+    "tilesetNames": ["", "", "", "", "", "", "", "", ""]
+  }
+]

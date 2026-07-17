@@ -345,6 +345,8 @@ async function readMap(
     return {
       id,
       name,
+      width: numberValue(map.width),
+      height: numberValue(map.height),
       events: arrayValue(map.events).flatMap((entry) => {
         const event = parseMapEvent(entry)
         return event ? [event] : []
@@ -356,7 +358,7 @@ async function readMap(
         ? 'invalidMapFile'
         : 'missingMapFile'
     warnings.push({ code, mapId: id })
-    return { id, name, events: [] }
+    return { id, name, width: 0, height: 0, events: [] }
   }
 }
 

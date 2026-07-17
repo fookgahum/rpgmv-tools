@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type {
   EventPageConditions,
   MapEvent,
@@ -8,6 +8,7 @@ import type {
 } from '../../../shared/contracts'
 import { CommandEditor } from '../components/CommandEditor'
 import { EventCommandList } from '../components/EventCommandList'
+import { MapCanvas, type MapCanvasHandle } from '../components/MapCanvas'
 import type { Locale, MessageSet } from '../i18n'
 
 interface MapEventsViewProps {
@@ -33,6 +34,8 @@ export function MapEventsView({
   const [pageId, setPageId] = useState(1)
   const [search, setSearch] = useState('')
   const [mode, setMode] = useState<'view' | 'edit' | 'create' | 'addPage'>('view')
+  const [mapCoordinate, setMapCoordinate] = useState<{ x: number; y: number } | null>(null)
+  const mapCanvasRef = useRef<MapCanvasHandle>(null)
   const selectedMap = project.maps.find((map) => map.id === mapId) ?? project.maps[0]
   const filteredEvents =
     selectedMap?.events.filter((event) => matchesSearch(event.id, event.name, search)) ?? []
@@ -47,12 +50,40 @@ export function MapEventsView({
     setPageId(1)
     setSearch('')
     setMode('view')
+    setMapCoordinate(null)
   }
 
   function selectEvent(nextEventId: number): void {
     setEventId(nextEventId)
     setPageId(1)
     setMode('view')
+    const event = selectedMap?.events.find((candidate) => candidate.id === nextEventId)
+    const coordinate = event ? { x: event.x, y: event.y } : null
+    setMapCoordinate(coordinate)
+    if (coordinate) mapCanvasRef.current?.focusCoordinate(coordinate)
+  }
+
+  function startCreate(): void {
+    setMapCoordinate(
+      mapCoordinate ?? (selectedEvent ? { x: selectedEvent.x, y: selectedEvent.y } : { x: 0, y: 0 })
+    )
+    setMode('create')
+  }
+
+  function startEdit(): void {
+    if (!selectedEvent) return
+    const coordinate = { x: selectedEvent.x, y: selectedEvent.y }
+    setMapCoordinate(coordinate)
+    setMode('edit')
+    mapCanvasRef.current?.focusCoordinate(coordinate)
+  }
+
+  function startAddPage(): void {
+    if (!selectedEvent) return
+    const coordinate = { x: selectedEvent.x, y: selectedEvent.y }
+    setMapCoordinate(coordinate)
+    setMode('addPage')
+    mapCanvasRef.current?.focusCoordinate(coordinate)
   }
 
   function entryName(type: 'switch' | 'variable' | 'item', id: number): string {
@@ -90,7 +121,7 @@ export function MapEventsView({
   const selectedConditions = selectedPage ? conditionLabels(selectedPage.conditions) : []
 
   return (
-    <div className="browser-layout">
+    <div className="map-browser-layout">
       <aside className="record-sidebar">
         <div className="sidebar-title">
           <h2>{text.maps.title}</h2>
@@ -107,15 +138,16 @@ export function MapEventsView({
         >
           {project.maps.map((map) => (
             <option key={map.id} value={map.id}>
-              #{String(map.id).padStart(3, '0')} {map.name || text.unnamed}
+              #{String(map.id).padStart(3, '0')} {map.name || text.unnamed} · {map.width}×
+              {map.height}
             </option>
           ))}
         </select>
         <button
           type="button"
           className="secondary-button sidebar-action"
-          disabled={!selectedMap}
-          onClick={() => setMode('create')}
+          disabled={!selectedMap || selectedMap.width < 1 || selectedMap.height < 1}
+          onClick={startCreate}
         >
           + {text.maps.newEvent}
         </button>
@@ -147,15 +179,35 @@ export function MapEventsView({
         </ul>
       </aside>
 
-      <main className="record-detail">
+      {selectedMap && (
+        <MapCanvas
+          key={selectedMap.id}
+          ref={mapCanvasRef}
+          map={selectedMap}
+          selectedCoordinate={
+            mapCoordinate ?? (selectedEvent ? { x: selectedEvent.x, y: selectedEvent.y } : null)
+          }
+          selectedEventId={selectedEvent?.id}
+          eventSelectionEnabled={mode === 'view'}
+          text={text}
+          onPickCoordinate={(coordinate) => {
+            if (mode !== 'addPage') setMapCoordinate(coordinate)
+          }}
+          onSelectEvent={selectEvent}
+        />
+      )}
+
+      <main className="record-detail map-inspector">
         {mode === 'create' && selectedMap ? (
           <MapEventForm
             key={`new-map-event-${selectedMap.id}`}
             mapId={selectedMap.id}
             project={project}
+            position={mapCoordinate ?? { x: 0, y: 0 }}
             locale={locale}
             text={text}
             onPreview={onPreview}
+            onPositionChange={setMapCoordinate}
             onCancel={() => setMode('view')}
           />
         ) : !selectedEvent || !selectedPage ? (
@@ -170,7 +222,9 @@ export function MapEventsView({
             event={selectedEvent}
             page={mode === 'edit' ? selectedPage : undefined}
             addingPage={mode === 'addPage'}
+            position={mapCoordinate ?? { x: selectedEvent.x, y: selectedEvent.y }}
             onPreview={onPreview}
+            onPositionChange={setMapCoordinate}
             onCancel={() => setMode('view')}
           />
         ) : (
@@ -190,11 +244,11 @@ export function MapEventsView({
                   type="button"
                   className="secondary-button"
                   disabled={selectedEvent.pages.length >= 20}
-                  onClick={() => setMode('addPage')}
+                  onClick={startAddPage}
                 >
                   {text.maps.addPage}
                 </button>
-                <button type="button" className="secondary-button" onClick={() => setMode('edit')}>
+                <button type="button" className="secondary-button" onClick={startEdit}>
                   {text.maps.editEvent}
                 </button>
               </div>
@@ -282,7 +336,9 @@ interface MapEventFormProps {
   event?: MapEvent
   page?: MapEventPage
   addingPage?: boolean
+  position: { x: number; y: number }
   onPreview: (operation: ProjectChangeOperation) => Promise<void>
+  onPositionChange: (position: { x: number; y: number }) => void
   onCancel: () => void
 }
 
@@ -294,13 +350,14 @@ function MapEventForm({
   event,
   page,
   addingPage = false,
+  position,
   onPreview,
+  onPositionChange,
   onCancel
 }: MapEventFormProps): React.JSX.Element {
+  const currentMap = project.maps.find((map) => map.id === mapId)
   const [name, setName] = useState(event?.name ?? '')
   const [note, setNote] = useState(event?.note ?? '')
-  const [x, setX] = useState(event?.x ?? 0)
-  const [y, setY] = useState(event?.y ?? 0)
   const [trigger, setTrigger] = useState(page?.trigger ?? 0)
   const [priority, setPriority] = useState(page?.priority ?? 1)
   const [moveType, setMoveType] = useState(page?.moveType ?? 0)
@@ -324,8 +381,8 @@ function MapEventForm({
         id: event?.id,
         name,
         note,
-        x,
-        y,
+        x: position.x,
+        y: position.y,
         page: {
           id: page?.id,
           conditions: {
@@ -374,8 +431,12 @@ function MapEventForm({
           <input
             type="number"
             min="0"
-            value={x}
-            onChange={(change) => setX(Number(change.target.value))}
+            max={currentMap ? currentMap.width - 1 : undefined}
+            disabled={addingPage}
+            value={position.x}
+            onChange={(change) =>
+              onPositionChange({ x: Number(change.target.value), y: position.y })
+            }
           />
         </label>
         <label>
@@ -383,8 +444,12 @@ function MapEventForm({
           <input
             type="number"
             min="0"
-            value={y}
-            onChange={(change) => setY(Number(change.target.value))}
+            max={currentMap ? currentMap.height - 1 : undefined}
+            disabled={addingPage}
+            value={position.y}
+            onChange={(change) =>
+              onPositionChange({ x: position.x, y: Number(change.target.value) })
+            }
           />
         </label>
         <label className="wide-field">

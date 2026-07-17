@@ -11,6 +11,7 @@ describe('RPG Maker MV project reader', () => {
     expect(project.title).toBe('Fixture Quest')
     expect(project.versionId).toBe(42)
     expect(project.maps).toHaveLength(1)
+    expect(project.maps[0]).toMatchObject({ width: 20, height: 20 })
     expect(project.maps[0].events[0]).toMatchObject({
       id: 1,
       name: 'Reward Chest',

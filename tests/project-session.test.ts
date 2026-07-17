@@ -175,6 +175,31 @@ describe('project write session', () => {
     }
   })
 
+  it('rejects an event coordinate outside the selected map', async () => {
+    const session = new ProjectSession()
+    await session.open(projectFile)
+    await expect(
+      session.preview({
+        kind: 'saveMapEvent',
+        event: {
+          mapId: 1,
+          name: 'Out of bounds',
+          note: '',
+          x: 20,
+          y: 0,
+          page: {
+            conditions: { switchIds: [] },
+            trigger: 0,
+            priority: 1,
+            imageName: '',
+            moveType: 0,
+            commands: []
+          }
+        }
+      })
+    ).resolves.toMatchObject({ status: 'error', code: 'invalidChange' })
+  })
+
   it('adds a page without replacing an existing map event page', async () => {
     const session = new ProjectSession()
     const project = await session.open(projectFile)

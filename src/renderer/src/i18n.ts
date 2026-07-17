@@ -88,6 +88,15 @@ export interface MessageSet {
     newEvent: string
     editEvent: string
     addPage: string
+    canvas: string
+    loadingCanvas: string
+    canvasError: string
+    missingAssets: string
+    zoomIn: string
+    zoomOut: string
+    resetView: string
+    selectedCoordinate: string
+    canvasHint: string
   }
   commonEvents: {
     title: string
@@ -276,7 +285,16 @@ export const messages: Record<Locale, MessageSet> = {
       conditionActor: '队伍角色',
       newEvent: '新建事件',
       editEvent: '编辑事件页',
-      addPage: '新增事件页'
+      addPage: '新增事件页',
+      canvas: '地图画布',
+      loadingCanvas: '正在加载地图图块…',
+      canvasError: '无法渲染该地图',
+      missingAssets: '缺少地图素材',
+      zoomIn: '放大',
+      zoomOut: '缩小',
+      resetView: '重置视图',
+      selectedCoordinate: '当前坐标',
+      canvasHint: '拖动平移地图，单击格子选择坐标或事件。'
     },
     commonEvents: {
       title: '公共事件',
@@ -465,7 +483,16 @@ export const messages: Record<Locale, MessageSet> = {
       conditionActor: 'Actor in party',
       newEvent: 'New event',
       editEvent: 'Edit event page',
-      addPage: 'Add event page'
+      addPage: 'Add event page',
+      canvas: 'Map canvas',
+      loadingCanvas: 'Loading map tiles…',
+      canvasError: 'This map could not be rendered',
+      missingAssets: 'Missing map assets',
+      zoomIn: 'Zoom in',
+      zoomOut: 'Zoom out',
+      resetView: 'Reset view',
+      selectedCoordinate: 'Selected coordinate',
+      canvasHint: 'Drag to pan. Click a tile to select its coordinate or event.'
     },
     commonEvents: {
       title: 'Common events',

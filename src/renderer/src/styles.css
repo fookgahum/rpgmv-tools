@@ -452,6 +452,143 @@ select:focus-visible {
   grid-template-columns: 294px minmax(0, 1fr);
 }
 
+.map-browser-layout {
+  display: grid;
+  height: 100%;
+  min-width: 900px;
+  grid-template-columns: 220px minmax(360px, 1fr) 360px;
+}
+
+.map-browser-layout .record-sidebar {
+  padding-inline: 12px;
+}
+
+.map-inspector {
+  padding: 22px 22px 52px;
+  border-left: 1px solid rgb(148 163 184 / 12%);
+}
+
+.map-canvas-panel {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: #0c1219;
+}
+
+.map-canvas-toolbar,
+.map-canvas-panel > footer {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  gap: 12px;
+  justify-content: space-between;
+  border-bottom: 1px solid rgb(148 163 184 / 12%);
+  background: rgb(11 17 30 / 88%);
+}
+
+.map-canvas-toolbar > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.map-canvas-toolbar strong {
+  font-size: 0.78rem;
+}
+
+.map-canvas-toolbar span,
+.map-canvas-panel > footer {
+  color: #748197;
+  font-size: 0.67rem;
+}
+
+.map-canvas-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.map-canvas-actions button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 7px;
+  color: #b8c5d8;
+  background: rgb(148 163 184 / 9%);
+  cursor: pointer;
+}
+
+.map-canvas-actions button:hover:not(:disabled) {
+  background: rgb(59 130 246 / 22%);
+}
+
+.map-canvas-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.map-canvas-actions span {
+  min-width: 42px;
+  text-align: center;
+}
+
+.map-canvas-viewport {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(45deg, rgb(148 163 184 / 4%) 25%, transparent 25%),
+    linear-gradient(-45deg, rgb(148 163 184 / 4%) 25%, transparent 25%), #101820;
+  background-position:
+    0 0,
+    8px 8px;
+  background-size: 16px 16px;
+}
+
+.map-canvas-viewport > p,
+.map-canvas-error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  color: #7f8ca0;
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+.map-canvas-error span {
+  max-width: 420px;
+  margin-top: 6px;
+  color: #667287;
+}
+
+.map-canvas-viewport canvas {
+  display: none;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.map-canvas-viewport canvas.ready {
+  display: block;
+}
+
+.map-canvas-viewport canvas:active {
+  cursor: grabbing;
+}
+
+.map-canvas-panel > footer {
+  border-top: 1px solid rgb(148 163 184 / 12%);
+  border-bottom: 0;
+}
+
+.map-canvas-panel .missing-assets {
+  color: #fbbf24;
+}
+
 .record-sidebar {
   display: flex;
   min-height: 0;

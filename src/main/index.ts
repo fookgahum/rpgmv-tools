@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import {
   APPLY_PROJECT_CHANGE_CHANNEL,
+  LOAD_MAP_VISUAL_CHANNEL,
   PREVIEW_PROJECT_CHANGE_CHANNEL,
   SELECT_PROJECT_CHANNEL,
   UNDO_PROJECT_CHANGE_CHANNEL,
@@ -40,10 +41,10 @@ async function selectProject(): Promise<ProjectSelectionResult> {
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 760,
-    minWidth: 900,
-    minHeight: 600,
+    width: 1500,
+    height: 900,
+    minWidth: 1100,
+    minHeight: 700,
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
@@ -66,6 +67,9 @@ function createWindow(): void {
 app.whenReady().then(() => {
   app.setAppUserModelId('com.rpgmvtools.copilot')
   ipcMain.handle(SELECT_PROJECT_CHANNEL, selectProject)
+  ipcMain.handle(LOAD_MAP_VISUAL_CHANNEL, (_event, mapId: number) =>
+    projectSession.loadMapVisual(mapId)
+  )
   ipcMain.handle(PREVIEW_PROJECT_CHANGE_CHANNEL, (_event, operation: ProjectChangeOperation) =>
     projectSession.preview(operation)
   )

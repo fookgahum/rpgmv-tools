@@ -5,6 +5,7 @@ import type {
   ApplyChangeResult,
   CommonEventDraft,
   EventCommand,
+  MapVisualResult,
   MapEventDraft,
   PreviewChangeResult,
   ProjectChangeOperation,
@@ -13,6 +14,7 @@ import type {
   UndoChangeResult
 } from '../shared/contracts'
 import { readProject } from './project-reader'
+import { loadMapVisual } from './map-visual'
 
 type JsonObject = Record<string, unknown>
 
@@ -359,6 +361,14 @@ export class ProjectSession {
     this.pending = null
     this.undoRecord = null
     return project
+  }
+
+  async loadMapVisual(mapId: number): Promise<MapVisualResult> {
+    if (!this.project) return { status: 'error', code: 'noProject' }
+    if (!this.project.maps.some((map) => map.id === mapId)) {
+      return { status: 'error', code: 'invalidMap' }
+    }
+    return loadMapVisual(this.project.rootPath, mapId)
   }
 
   async preview(operation: ProjectChangeOperation): Promise<PreviewChangeResult> {

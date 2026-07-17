@@ -1,4 +1,5 @@
 export const SELECT_PROJECT_CHANNEL = 'project:select'
+export const LOAD_MAP_VISUAL_CHANNEL = 'project:load-map-visual'
 export const PREVIEW_PROJECT_CHANGE_CHANNEL = 'project:preview-change'
 export const APPLY_PROJECT_CHANGE_CHANNEL = 'project:apply-change'
 export const UNDO_PROJECT_CHANGE_CHANNEL = 'project:undo-change'
@@ -39,8 +40,28 @@ export interface MapEvent {
 export interface ProjectMap {
   id: number
   name: string
+  width: number
+  height: number
   events: MapEvent[]
 }
+
+export interface MapVisualData {
+  width: number
+  height: number
+  tileWidth: number
+  tileHeight: number
+  tilesetId: number
+  tilesetName: string
+  tileData: number[]
+  tilesetFlags: number[]
+  tilesetImages: Array<string | null>
+  parallaxImage: string | null
+  missingImages: string[]
+}
+
+export type MapVisualResult =
+  | { status: 'loaded'; map: MapVisualData }
+  | { status: 'error'; code: 'noProject' | 'invalidMap' | 'unreadableMap'; detail?: string }
 
 export interface CommonEvent {
   id: number
@@ -174,6 +195,7 @@ export type ProjectSelectionResult =
 
 export interface RpgmvApi {
   selectProject: () => Promise<ProjectSelectionResult>
+  loadMapVisual: (mapId: number) => Promise<MapVisualResult>
   previewProjectChange: (operation: ProjectChangeOperation) => Promise<PreviewChangeResult>
   applyProjectChange: (previewId: string) => Promise<ApplyChangeResult>
   undoProjectChange: () => Promise<UndoChangeResult>

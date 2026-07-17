@@ -1,6 +1,6 @@
 {
   "name": "rpgmv-tools",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A safe desktop copilot for creating RPG Maker MV events.",
   "main": "./out/main/index.js",
   "author": "rpgmv-tools contributors",
